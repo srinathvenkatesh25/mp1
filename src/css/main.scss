@@ -347,11 +347,19 @@ body.scrolled .nav__link {
   padding: 1rem 0.3rem 0.5rem;
 }
 
-.panel__chart span {
+.panel__chart-bar {
   display: block;
   border-radius: 999px 999px 0 0;
   background: linear-gradient(180deg, $accent, $accent-strong);
   box-shadow: 0 12px 20px rgba(94, 220, 196, 0.25);
+}
+
+$chart-bar-heights: 35%, 52%, 60%, 72%, 89%, 100%, 78%;
+
+@for $i from 1 through length($chart-bar-heights) {
+  .panel__chart-bar--#{$i} {
+    height: nth($chart-bar-heights, $i);
+  }
 }
 
 .panel__timeline {
