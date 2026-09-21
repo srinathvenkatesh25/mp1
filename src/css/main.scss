@@ -11,6 +11,10 @@ $text-muted: #aac2d8;
 $shadow: rgba(8, 16, 27, 0.32);
 $border: rgba(255, 255, 255, 0.08);
 
+$nav-height: 96px;
+$nav-height-scrolled: 64px;
+$slide-count: 3;
+
 @mixin section-spacing {
   padding: 6rem 0;
 }
@@ -67,6 +71,7 @@ select {
 .section {
   width: 100%;
   position: relative;
+  scroll-margin-top: $nav-height-scrolled;
 }
 
 .eyebrow {
@@ -116,7 +121,7 @@ body.scrolled .site-header {
 }
 
 .nav {
-  min-height: 88px;
+  min-height: $nav-height;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -124,7 +129,7 @@ body.scrolled .site-header {
 }
 
 body.scrolled .nav {
-  min-height: 72px;
+  min-height: $nav-height-scrolled;
 }
 
 .brand {
@@ -161,31 +166,39 @@ body.scrolled .nav {
 .nav__link {
   position: relative;
   z-index: 1;
-  font-size: 0.92rem;
+  font-size: 1rem;
   color: $text-muted;
-  transition: color 0.2s ease;
   padding: 0.7rem 0.9rem;
   font-weight: 600;
-}
+  transition: color 0.2s ease, font-size 0.25s ease, padding 0.25s ease;
 
-.nav__link.is-active {
-  color: #06131b;
-}
+  // Highlight pill behind the active item; fades and scales in as the reading position changes.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 999px;
+    background: linear-gradient(135deg, $accent, $accent-strong);
+    box-shadow: 0 12px 20px rgba(94, 220, 196, 0.2);
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.24s ease, transform 0.24s ease;
+  }
 
-.nav__indicator {
-  position: absolute;
-  top: 0.42rem;
-  left: 0.7rem;
-  height: calc(100% - 0.84rem);
-  width: 5.2rem;
-  border-radius: 999px;
-  background: linear-gradient(135deg, $accent, $accent-strong);
-  box-shadow: 0 12px 20px rgba(94, 220, 196, 0.2);
-  transition: left 0.24s ease, width 0.24s ease;
+  &.is-active {
+    color: #06131b;
+
+    &::before {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
 }
 
 body.scrolled .nav__link {
   font-size: 0.82rem;
+  padding: 0.5rem 0.9rem;
 }
 
 .hero {
@@ -196,7 +209,7 @@ body.scrolled .nav__link {
 }
 
 .hero__content {
-  min-height: calc(100vh - 90px);
+  min-height: calc(100vh - #{$nav-height});
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   align-items: center;
@@ -525,6 +538,12 @@ $chart-bar-heights: 35%, 52%, 60%, 72%, 89%, 100%, 78%;
   transition: transform 0.35s ease;
 }
 
+@for $i from 0 to $slide-count {
+  .carousel__track[data-slide="#{$i}"] {
+    transform: translateX(#{$i * -100%});
+  }
+}
+
 .slide {
   min-width: 100%;
   padding: 1.5rem;
@@ -575,7 +594,7 @@ $chart-bar-heights: 35%, 52%, 60%, 72%, 89%, 100%, 78%;
 
 .fixed-image-section {
   background-image: linear-gradient(rgba(9, 19, 33, 0.6), rgba(9, 19, 33, 0.7)),
-    url("https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80");
+    url("../assets/office-bg.jpg");
   background-attachment: fixed;
   background-position: center;
   background-repeat: no-repeat;
@@ -897,10 +916,6 @@ video {
     flex-wrap: wrap;
     justify-content: center;
     width: 100%;
-  }
-
-  .nav__indicator {
-    display: none;
   }
 
   .stats-grid {

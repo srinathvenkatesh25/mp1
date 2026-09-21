@@ -1,39 +1,38 @@
 const header = document.querySelector('.site-header');
 const navLinks = [...document.querySelectorAll('.nav__link')];
-const navIndicator = document.querySelector('.nav__indicator');
-const sections = [...document.querySelectorAll('main section[id]')];
+const navTargets = navLinks
+  .map((link) => ({ link, target: document.querySelector(link.getAttribute('href')) }))
+  .filter(({ target }) => target);
 
-function updateScrollState() {
-  const scrolled = window.scrollY > 24;
-  document.body.classList.toggle('scrolled', scrolled);
+const SCROLLED_THRESHOLD = 24;
+const ACTIVE_LINE_OFFSET = 30;
 
-  const navOffset = header ? header.offsetHeight : 0;
-  let activeId = 'top';
-
-  sections.forEach((section) => {
-    const rect = section.getBoundingClientRect();
-    const sectionTop = rect.top - navOffset - 30;
-    const sectionBottom = rect.bottom - navOffset - 30;
-
-    if (sectionTop <= 0 && sectionBottom > 0) {
-      activeId = section.id;
-    }
-  });
-
-  navLinks.forEach((link) => {
-    const isActive = link.getAttribute('href') === `#${activeId}`;
-    link.classList.toggle('is-active', isActive);
-  });
-
-  const activeElement = document.querySelector(`.nav__link[href="#${activeId}"]`);
-  if (!activeElement || !navIndicator) {
-    return;
+function getActiveLink() {
+  const scrolledToBottom =
+    window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+  if (scrolledToBottom) {
+    return navTargets[navTargets.length - 1].link;
   }
 
-  const indicatorWidth = activeElement.offsetWidth;
-  const indicatorLeft = activeElement.offsetLeft;
-  navIndicator.style.width = `${indicatorWidth}px`;
-  navIndicator.style.left = `${indicatorLeft}px`;
+  // The active item is the last menu section whose top has passed the bottom edge of the navbar.
+  // Sections that are not in the menu keep the previous item highlighted.
+  const activeLine = header.offsetHeight + ACTIVE_LINE_OFFSET;
+  let active = navTargets[0];
+  navTargets.forEach((item) => {
+    if (item.target.getBoundingClientRect().top <= activeLine) {
+      active = item;
+    }
+  });
+  return active.link;
+}
+
+function updateScrollState() {
+  document.body.classList.toggle('scrolled', window.scrollY > SCROLLED_THRESHOLD);
+
+  const activeLink = getActiveLink();
+  navLinks.forEach((link) => {
+    link.classList.toggle('is-active', link === activeLink);
+  });
 }
 
 window.addEventListener('scroll', updateScrollState, { passive: true });
@@ -50,7 +49,7 @@ let currentSlideIndex = 0;
 function renderSlide(index) {
   if (!carouselTrack) return;
 
-  carouselTrack.style.transform = `translateX(-${index * 100}%)`;
+  carouselTrack.dataset.slide = index;
   slides.forEach((slide, slideIndex) => {
     slide.classList.toggle('is-active', slideIndex === index);
   });
@@ -132,6 +131,10 @@ const statsMap = {
 
 const storageKey = 'focusflow-sessions';
 
+const BASELINE = { hours: 24, streak: 12, tasks: 41, stress: 34, score: 88 };
+const MAX_STREAK = 30;
+const MAX_STRESS_DROP = 92;
+
 function getSavedSessions() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
@@ -142,7 +145,11 @@ function getSavedSessions() {
 }
 
 function persistSessions(sessions) {
-  localStorage.setItem(storageKey, JSON.stringify(sessions));
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(sessions));
+  } catch (error) {
+    // Storage can be unavailable (private mode, quota); the dashboard still updates for this visit.
+  }
 }
 
 function formatTimeLabel() {
@@ -150,30 +157,45 @@ function formatTimeLabel() {
   return now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+function formatHours(hours) {
+  return Number.isInteger(hours) ? `${hours}` : hours.toFixed(1);
+}
+
 function calculateFocusScore(minutes, energy, distractions) {
   const weightedScore = minutes * 0.9 + Number(energy) * 7 - Number(distractions) * 6;
   return Math.max(40, Math.min(99, Math.round(weightedScore)));
 }
 
+function setText(element, value) {
+  if (element) element.textContent = value;
+}
+
 function updateStats() {
   const sessions = getSavedSessions();
   const totalMinutes = sessions.reduce((total, session) => total + Number(session.minutes || 0), 0);
-  const totalHours = (totalMinutes / 60).toFixed(1);
-  const totalTasks = sessions.length + 41;
-  const averageStressDrop = sessions.length ? Math.min(92, 23 + sessions.length * 4) : 34;
+  const hours = formatHours(BASELINE.hours + totalMinutes / 60);
+  const streak = Math.min(BASELINE.streak + sessions.length, MAX_STREAK);
+  const stressDrop = Math.min(BASELINE.stress + sessions.length * 3, MAX_STRESS_DROP);
   const latestSession = sessions[0];
-  const currentMode = latestSession ? latestSession.mode : 'Deep work';
-  const score = latestSession ? latestSession.score : 88;
-  const streak = sessions.length ? `${Math.min(12 + sessions.length, 30)}d` : '12d';
 
-  if (statsMap.hours) statsMap.hours.textContent = `${totalHours}`;
-  if (statsMap.streak) statsMap.streak.textContent = `${Math.max(12, Number(streak.replace('d', '')))} days`;
-  if (statsMap.tasks) statsMap.tasks.textContent = `${totalTasks}`;
-  if (statsMap.stress) statsMap.stress.textContent = `${averageStressDrop}%`;
-  if (statsMap.focusScore) statsMap.focusScore.textContent = `${score}`;
-  if (statsMap.hoursLogged) statsMap.hoursLogged.textContent = `${totalHours}`;
-  if (statsMap.streakValue) statsMap.streakValue.textContent = streak;
-  if (statsMap.modeLabel) statsMap.modeLabel.textContent = currentMode;
+  setText(statsMap.hours, hours);
+  setText(statsMap.streak, `${streak} days`);
+  setText(statsMap.tasks, `${BASELINE.tasks + sessions.length}`);
+  setText(statsMap.stress, `${stressDrop}%`);
+  setText(statsMap.focusScore, `${latestSession ? latestSession.score : BASELINE.score}`);
+  setText(statsMap.hoursLogged, hours);
+  setText(statsMap.streakValue, `${streak}d`);
+  setText(statsMap.modeLabel, latestSession ? latestSession.mode : 'Deep work');
+}
+
+function createSessionItem(title, detail) {
+  const item = document.createElement('li');
+  const strong = document.createElement('strong');
+  const small = document.createElement('small');
+  strong.textContent = title;
+  small.textContent = detail;
+  item.append(strong, small);
+  return item;
 }
 
 function renderSessionLog() {
@@ -181,19 +203,22 @@ function renderSessionLog() {
   if (!sessionLog) return;
 
   if (!sessions.length) {
-    sessionLog.innerHTML = '<li><strong>No sessions logged yet.</strong><small>Start with a focus sprint to update your dashboard.</small></li>';
+    sessionLog.replaceChildren(
+      createSessionItem('No sessions logged yet.', 'Start with a focus sprint to update your dashboard.')
+    );
     return;
   }
 
-  sessionLog.innerHTML = sessions
-    .slice(0, 5)
-    .map((session) => `
-      <li>
-        <strong>${session.mode} · ${session.minutes} min</strong>
-        <small>${session.note || 'Session completed'} · ${session.time}</small>
-      </li>
-    `)
-    .join('');
+  sessionLog.replaceChildren(
+    ...sessions
+      .slice(0, 5)
+      .map((session) =>
+        createSessionItem(
+          `${session.mode} · ${session.minutes} min`,
+          `${session.note || 'Session completed'} · ${session.time}`
+        )
+      )
+  );
 }
 
 function saveSession(event) {

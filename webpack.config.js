@@ -36,7 +36,12 @@ module.exports = {
   plugins: [
     new CopyPlugin({
       patterns: [
-        { from: './assets/', to: './assets/' },
+        // Assets referenced from index.html/SCSS are emitted (hashed) by their loaders; copy only the rest.
+        {
+          from: './assets/',
+          to: './assets/',
+          globOptions: { ignore: ['**/*.mp4', '**/office-bg.jpg', '**/video-poster.jpg', '**/favicon.svg'] },
+        },
       ],
     }),
     new HtmlWebpackPlugin({
@@ -47,5 +52,6 @@ module.exports = {
   output: {
     filename: 'bundle.js',
     path: path.resolve(__dirname, "build"),
+    clean: true,
   },
 };

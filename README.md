@@ -8,6 +8,7 @@
 4. [Getting Started](#getting-started)
 5. [Submission Details](#submission-details)
 6. [Large Language Model Usage Policy](#large-language-model-usage-policy)
+7. [Sources and Credits](#sources-and-credits)
 
 ## Assignment
 
@@ -103,3 +104,15 @@ We acknowledge the transformative potential of Large Language Models (LLM) in ge
 
 As part of this class, we *do* encourage students to experiment with LLM services such as OpenAI's ChatGPT to generate source code for MPs. If LLMs are used to generate code for an MP, students *must* (1) submit their chatlogs along with their source code, and (2) answer survey questions related to their experience using LLMs in the grading form. Failure to do this will be a violation of the academic integrity policy of this course.
 
+## Sources and Credits
+
+My submission is a single-page site for a fictional product, FocusFlow. All HTML, SCSS and JavaScript is written without any UI libraries or frameworks. Sources referenced or used:
+
+- **Icons:** [Font Awesome Free 6.5.2](https://fontawesome.com/) (loaded from cdnjs) for the feature, stat and social icons.
+- **Font:** [Inter](https://fonts.google.com/specimen/Inter) via Google Fonts.
+- **Images:** Photos from [Unsplash](https://unsplash.com/) (Unsplash License), stored in `src/assets/`:
+  - `office-bg.jpg`: fixed-position background image (`photo-1497366754035-f200968a6e72`)
+  - `video-poster.jpg`: video poster image (`photo-1506126613408-eca07ce68773`)
+- **Video:** `src/assets/focus-video.mp4` - [fill in where this video came from]
+- **Build tooling:** Webpack/Babel/Sass setup from the course template repository ([cs409-fa25/mp1](https://github.com/cs409-fa25/mp1)).
+- **Reference reading:** MDN Web Docs (`position: sticky`, `scroll-behavior`, `background-attachment`, `<video>`, `dialog`/ARIA modal patterns, `getBoundingClientRect`) and the Sass documentation (variables, mixins, `@for`).
